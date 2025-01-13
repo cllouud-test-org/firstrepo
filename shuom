@@ -1,0 +1,49 @@
+# 0 参考教程
+https://docs.github.com/zh/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/quickstart-for-actions-runner-controller
+
+# 1 通过kind安装本地k8s集群，安装helm
+
+# 2 安装控制器
+```bash
+NAMESPACE="arc-systems"
+helm install arc \
+    --namespace "${NAMESPACE}" \
+    --create-namespace \
+    oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set-controller
+```
+
+# 3 安装执行器
+1. 用于测试的仓库是 https://github.com/cllouud-test-org/firstrepo
+
+2. 安装执行器
+```bash
+INSTALLATION_NAME="cllouud-test-org-firstrepo"
+NAMESPACE="cllouud-test-org"
+GITHUB_CONFIG_URL="https://github.com/cllouud-test-org/firstrepo"
+GITHUB_PAT="cllouud-test-org-firstrepo-secret"
+helm install "${INSTALLATION_NAME}" \
+    --namespace "${NAMESPACE}" \
+    --create-namespace \
+    --set githubConfigUrl="${GITHUB_CONFIG_URL}" \
+    --set githubConfigSecret="${GITHUB_PAT}" \
+    oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+```
+3. 配置组织的Github App
+参考 https://docs.github.com/zh/actions/hosting-your-own-runners/managing-self-hosted-runners-with-actions-runner-controller/authenticating-to-the-github-api
+
+配置的github app https://github.com/apps/clloudd-org-github-app
+```bash
+kubectl create secret generic cllouud-test-org-firstrepo-secret \
+   --namespace="${NAMESPACE}" \
+   --from-literal=github_app_id=1100707 \
+   --from-literal=github_app_installation_id=59061922 \
+   --from-literal=github_app_private_key=
+```
+
+# 4 测试workflow
+workflow: https://github.com/cllouud-test-org/firstrepo/blob/main/.github/workflows/arc-runner-set.yml
+测试成功：https://github.com/cllouud-test-org/firstrepo/actions/runs/12742718018
+
+# 5 问题
+1. GITHUB_CONFIG_URL参数配置到仓库一层"https://github.com/cllouud-test-org/firstrepo"，可以执行github aciton。如果配置到组织一层"https://github.com/cllouud-test-org/"，无法执行firstrepo仓库的github action。
+
