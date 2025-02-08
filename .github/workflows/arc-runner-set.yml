@@ -1,10 +1,37 @@
 name: Actions Runner Controller Demo
+
 on:
   workflow_dispatch:
+  pull_request:
 
 jobs:
   Explore-GitHub-Actions:
     # You need to use the INSTALLATION_NAME from the previous step
     runs-on: cllouud-org-ascendci
+    container:
+      image: quay.io/ascend/cann:latest
+      volumes:
+        - /usr/local/dcmi:/usr/local/dcmi
+        - /usr/local/bin/npu-smi:/usr/local/bin/npu-smi
+        - /usr/local/Ascend/driver/lib64/:/usr/local/Ascend/driver/lib64/
+        - /usr/local/Ascend/driver/version.info:/usr/local/Ascend/driver/version.info
+        - /etc/ascend_install.info:/etc/ascend_install.info
+      # TODO: Should use --device /dev/davinci1 ?
+      options: >-
+        --network host
+        --device /dev/davinci_manager
+        --device /dev/devmm_svm
+        --device /dev/hisi_hdc
+      env:
+        HF_ENDPOINT: https://hf-mirror.com
     steps:
-    - run: echo "🎉 This job uses runner scale set runners!"
+      - run: echo "🎉 This job uses runner scale set runners!"
+
+      - name: Show details
+        run: |
+          apt-get update
+          python --version
+
+      - name: Show NPU info
+        run: |
+          npu-smi info
